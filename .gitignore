@@ -1,0 +1,5 @@
+blender
+.cache
+assets
+build
+compile_commands.json

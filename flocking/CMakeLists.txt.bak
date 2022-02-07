@@ -1,0 +1,5 @@
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+include_directories(CMAKE_SOURCE_DIR/lib)
+link_libraries(raylib duck m)
+add_library(flocking ducks.c)
