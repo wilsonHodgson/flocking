@@ -3,6 +3,7 @@ project(Duck_Flock)
 
 # This variable exports a json for the C language server to interpret
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_BUILD_TYPE Debug)
 
 # Locate libraries
 set(FLOCKING_SYSTEM flocking/ducks.c)

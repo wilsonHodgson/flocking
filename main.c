@@ -3,6 +3,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "math.h"
+#include "time.h"
 
 #include "globals.h"
 #include "ducks.h"
@@ -14,6 +15,9 @@ int main(void)
 	SetTargetFPS(60);
 	InitFlock();
 
+	clock_t timer;
+	timer = clock();
+
 	while(!WindowShouldClose())
 	{
 		BeginDrawing();
@@ -24,8 +28,9 @@ int main(void)
 
 		EndDrawing();
 
-		UpdateFlock();
-
+		timer = clock() - timer;
+		double dt = ((double)timer)/CLOCKS_PER_SEC;
+		UpdateFlock(dt);
 	}
 
 	CloseWindow();
