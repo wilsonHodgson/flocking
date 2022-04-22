@@ -3,11 +3,13 @@ typedef struct Duck { Vector2 forwards; Vector2 position; Vector2 velocity; floa
 typedef struct HeapArray { size_t size; void* index; } HeapArray;
 
 void DrawDuck();
+void DrawDuck3D();
 void UpdateDuck(Duck*, double);
 Vector2 Seek(Duck, Vector2);
 
 void InitFlock();
 void RenderFlock();
+void RenderFlock3D();
 void UpdateFlock(double);
 
 HeapArray getNeighbours(Duck*, Duck*, int, float);

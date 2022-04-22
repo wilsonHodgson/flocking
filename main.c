@@ -11,8 +11,18 @@
 int main(void)
 {
 
-	InitWindow(screenWidth, screenHeight, "Duck Flock");
+	InitWindow(windowWidth, windowHeight, "Duck Flock");
 	SetTargetFPS(60);
+
+	Camera3D camera = { 0 };
+	camera.position = (Vector3){ 0.0f, 150.0f, 0.0f}; // Camera position
+	camera.target = (Vector3){ 0.0f, 0.0f, 0.0f};      // Camera looking at point
+	camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };          // Camera up vector (rotation towards target)
+	camera.fovy = 45.0f;                                // Camera field-of-view Y
+	camera.projection = CAMERA_PERSPECTIVE;                   // Camera mode type
+
+	SetCameraMode(camera, CAMERA_FREE);
+
 	InitFlock();
 
 	clock_t timer;
@@ -23,14 +33,22 @@ int main(void)
 		BeginDrawing();
 		ClearBackground(RAYWHITE);
 
-		RenderFlock();
+		//RenderFlock();
 		DrawText("This is duck flock.", 10, 10, 20, DARKGRAY);
 
+
+		BeginMode3D(camera);
+
+		DrawGrid(1000, 1.0f);
+		RenderFlock3D();
+
+		EndMode3D();
 		EndDrawing();
 
 		timer = clock() - timer;
 		double dt = ((double)timer)/CLOCKS_PER_SEC;
 		UpdateFlock(dt);
+		UpdateCamera(&camera);
 	}
 
 	CloseWindow();

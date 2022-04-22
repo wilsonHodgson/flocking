@@ -12,13 +12,43 @@ Duck* flock;
 int flock_size = 10;
 Duck leadDuck;
 
+Model model;
+ModelAnimation* anims;
+int animFrameCounter = 0;
+
 void InitFlock()
 {
+	model = LoadModel("assets/duck.iqm");
+	Texture2D duck_texture = LoadTexture("assets/BigDuck Base Color.png");
+	SetMaterialTexture(&model.materials[0], MATERIAL_MAP_DIFFUSE, duck_texture);
+	SetModelMeshMaterial(&model, 1, 0);
+	/* #### NOTE WHEN LOADING MULTIPLE MESHES FROM ONE IQM FILE ###
+	 * Mesh materials are not necessarily automatically mapped to their correct meshes in the IQM model. I had to do this manually, because all meshMaterials were being set to '0' which is the first material defined in the mesh.
+	 * It does **NOT** by default map the first material to the first mesh, and the second material to the second mesh, etc.
+	 * To determine the order of meshmaterials in the model, refer to the iqe file (text formatted version of iqm)
+	 * I'm not sure, but I believe blender exports the mesh's in alphabetical order when using the iqm exporter 
+	 *
+	 * https://github.com/lsalzman/iqm
+	 */
+
+
+	Texture2D leg_texture = LoadTexture("assets/duck_feet Base Color.png");
+	SetMaterialTexture(&model.materials[1], MATERIAL_MAP_DIFFUSE, leg_texture);     // Set model material map texture
+	SetModelMeshMaterial(&model, 0, 1);
+
+	unsigned int animsCount;
+	anims = LoadModelAnimations("assets/duck.iqm", &animsCount);
+	UpdateModelAnimation(model, anims[0], 0);
+	/* The animation also has to be specified in a comma separated list during export with the blender iqm exporter. 
+	 * This comma separated list will be imported as an array of animations, indexed in the order they appear in the iqm file. 
+	 */
+
+
 	flock = (Duck*)malloc(flock_size * sizeof(Duck));
 
 	for (int i=1; i<flock_size; i++){
 		flock[i].forwards = (Vector2){(1+ rand() % 2) *(-1), (1+ rand() % 2) * (-1)};
-		flock[i].position = (Vector2){rand() % screenWidth, rand() % screenHeight};
+		flock[i].position = (Vector2){(rand() % screenWidth) - screenWidth/2.0f, (rand() % screenHeight) - screenHeight/2.0f};
 		flock[i].velocity = Vector2Zero();
 		flock[i].destination = flock[i].forwards;
 
@@ -29,7 +59,7 @@ void InitFlock()
 
 	//init the leader
 	flock[0].forwards = (Vector2){(1+ rand() % 2) *(-1), (1+ rand() % 2) * (-1)};
-	flock[0].position = (Vector2){rand() % screenWidth, rand() % screenHeight};
+	flock[0].position = (Vector2){(rand() % screenWidth) - screenWidth/2.0f, (rand() % screenHeight) - screenHeight/2.0f};
 	flock[0].velocity = Vector2Zero();
 	flock[0].destination = Vector2Zero();
 
@@ -48,6 +78,14 @@ void RenderFlock()
 	return;
 }
 
+void RenderFlock3D()
+{
+	for (int i=0; i<flock_size; i++){
+		DrawDuck3D(flock[i]);
+	}
+	return;
+}
+
 void UpdateFlock(double dt)
 {
 	for (int i=0; i<flock_size; i++){
@@ -56,7 +94,7 @@ void UpdateFlock(double dt)
 	return;
 }
 
-void DrawDuck(Duck duck, double dt)
+void DrawDuck(Duck duck)
 {
 	if (duck.state == 0) {
 		DrawCircleV(duck.position, 20, GREEN);
@@ -73,6 +111,32 @@ void DrawDuck(Duck duck, double dt)
 
 	forwards = Vector2Add(duck.position, forwards);
 	DrawLineV(duck.position, forwards, MAROON);
+}
+
+void DrawDuck3D(Duck duck){
+	Vector3 duck_pos = (Vector3){duck.position.x, 0, duck.position.y};
+	Vector3 up = {0.f, 1.f, 0.f};
+
+	//This angle feels off because the model isn't facing the same angle as the duck object when I rotate it.
+	float angle = -Vector2Angle(duck.forwards, (Vector2){1.0f, 0.0f});
+	
+	int time = (int)(clock()/(CLOCKS_PER_SEC/100));
+
+	animFrameCounter = time%170;
+	UpdateModelAnimation(model, anims[0], animFrameCounter);
+//	if (animFrameCounter >= anims[0].frameCount) animFrameCounter = 0;
+
+	if (duck.state == 0){
+                DrawModelEx(model, duck_pos, up, angle+90, (Vector3){2.0f, 2.0f, 2.0f}, WHITE);
+		Vector3 above = Vector3Add(duck_pos, (Vector3){0.f, 4.f, 0.f});
+		DrawSphere(above, 0.5f, MAROON);
+	} else if (duck.state == 1) {
+		DrawCube(duck_pos, 2.0f, 2.0f, 2.0f, BLUE);
+                DrawCubeWires(duck_pos, 2.0f, 2.0f, 2.0f, MAROON);
+	} else {
+		DrawCube(duck_pos, 2.0f, 2.0f, 2.0f, RED);
+                DrawCubeWires(duck_pos, 2.0f, 2.0f, 2.0f, MAROON);
+	}
 }
 
 void UpdateDuck(Duck* duck, double dt)
@@ -97,7 +161,7 @@ void UpdateDuck(Duck* duck, double dt)
 			if (IsKeyDown(KEY_D)) {
 				duck->forwards = Vector2Rotate(duck->forwards, 0.05);
 			}
-			duck->velocity = Vector2Scale(duck->forwards, 5);
+			duck->velocity = Vector2Scale(duck->forwards, 2.5);
 			break;
 		//follow
 		case 1:
@@ -110,15 +174,15 @@ void UpdateDuck(Duck* duck, double dt)
 			duck->destination = leadDuck.position;
 
 			// I need different sized neighbours for different force measurements
-			data = getNeighbours(duck, flock, flock_size, 300.0f);
+			data = getNeighbours(duck, flock, flock_size, 30.0f);
 			neighbours = data.index;
 			neighbours_size = data.size;
 
-			data = getNeighbours(duck, flock, flock_size, 55.0f);
+			data = getNeighbours(duck, flock, flock_size, 8.0f);
 			near_neighbours = data.index;
 			near_size = data.size;
 
-			data = getNeighbours(duck, flock, flock_size, 600.0f);
+			data = getNeighbours(duck, flock, flock_size, 80.0f);
 			far_neighbours = data.index;
 			far_size = data.size;
 
@@ -178,25 +242,23 @@ void UpdateDuck(Duck* duck, double dt)
 			Vector2 seek = Seek(*duck, duck->destination);
 			duck->velocity = Vector2Add(duck->velocity, seek);
 
-			printf("cohesion: {%.6f, %.6f} \n", cohesion.x, cohesion.y);
-			printf("separation: {%.6f, %.6f} \n", separation.x, separation.y);
-			printf("average heading: %.6f, %.6f \n", average_heading.x, average_heading.y);
 			break;
 
 	}
 
+	duck->velocity = Vector2Scale(duck->velocity, 0.1f);
 	duck->position = Vector2Add(duck->position, Vector2Scale(duck->velocity, ((float)1)/4));
 
 	//loop screen edges
-	if (duck->position.y > screenHeight)
-		duck->position.y = (int)duck->position.y % screenHeight;
-	if (duck->position.x > screenWidth)
-		duck->position.x = (int)duck->position.x % screenWidth;
+	if (duck->position.y > screenHeight/2.0f)
+		duck->position.y -= screenHeight;
+	if (duck->position.x > screenWidth/2.0f)
+		duck->position.x -= screenWidth;
 
-	if (duck->position.y < 0)
+	if (duck->position.y < -screenHeight/2.0f)
 		duck->position.y += screenHeight;
 
-	if (duck->position.x < 0)
+	if (duck->position.x < -screenWidth/2.0f)
 		duck->position.x += screenWidth;
 }
 
