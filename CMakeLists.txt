@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.11)
 project(Duck_Flock)
 #add_subdirectory(flocking)
 
