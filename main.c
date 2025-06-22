@@ -21,8 +21,6 @@ int main(void)
 	camera.fovy = 45.0f;                                // Camera field-of-view Y
 	camera.projection = CAMERA_PERSPECTIVE;                   // Camera mode type
 
-	SetCameraMode(camera, CAMERA_FREE);
-
 	InitFlock();
 
 	clock_t timer;
@@ -33,22 +31,22 @@ int main(void)
 		BeginDrawing();
 		ClearBackground(RAYWHITE);
 
-		//RenderFlock();
+		RenderFlock();
 		DrawText("This is duck flock.", 10, 10, 20, DARKGRAY);
 
 
-		BeginMode3D(camera);
+		//BeginMode3D(camera);
 
 		DrawGrid(1000, 1.0f);
-		RenderFlock3D();
+		//RenderFlock3D();
 
-		EndMode3D();
+		//EndMode3D();
 		EndDrawing();
 
 		timer = clock() - timer;
 		double dt = ((double)timer)/CLOCKS_PER_SEC;
 		UpdateFlock(dt);
-		UpdateCamera(&camera);
+		UpdateCamera(&camera, CAMERA_FREE);
 	}
 
 	CloseWindow();
